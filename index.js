@@ -11,7 +11,7 @@ const Joi = require("joi");
 const app = express();
 const port = process.env.PORT || 3000;
 const saltRounds = 12;
-const expireTime = 24 * 60 * 60 * 1000; //expires after 1 day  (hours * minutes * seconds * millis)
+const expireTime = 60 * 60 * 1000; //expires after 1 hour  (minutes * seconds * millis)
 
 /* secret information section */
 const mongodb_host = process.env.MONGODB_HOST;
@@ -75,17 +75,25 @@ app.get('/signup', (req, res) => {
     </form>
     `;
 
-    if (missingName) {
-        signup += "<br> name is required";
-    }
-    if (missingEmail) {
-        signup += "<br> email is required";
-    }
-    if (missingPassword) {
-        signup += "<br> password is required";
-    }
 
-    res.send(signup);
+    if (missingName || missingEmail || missingPassword) {
+        
+        badSignUp = "";
+        if (missingName) {
+            badSignUp += " <p> Name is required. </p>";
+        }
+        if (missingEmail) {
+            badSignUp += "<p> Email is required. </p>";
+        }
+        if (missingPassword) {
+            badSignUp += "<p> Password is required. </p>";
+        }
+        badSignUp += `<a href="/signup">Try again</a>`
+
+        res.send(badSignUp);
+    } else {
+        res.send(signup);
+    }    
 });
 
 app.post('/signingup', async (req, res) => {
@@ -126,7 +134,10 @@ app.post('/signingup', async (req, res) => {
         const validationResult = schema.validate({name, email, password});
         if (validationResult.error != null) {
            console.log(validationResult.error);
-           res.redirect("/signup");
+
+           badSignUp = '<p> Email provided is not valid. </p> <a href="/signup">Try again</a>'
+   
+           res.send(badSignUp);
            return;
        }
     
@@ -230,10 +241,7 @@ app.get('/members', (req, res) => {
 
 app.get('/logout', (req, res) => {
     req.session.destroy();
-    var html = `
-    You are logged out.
-    `;
-    res.send(html);
+    res.redirect("/");
 });
 
 app.use(express.static(__dirname + "/public"));
