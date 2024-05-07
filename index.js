@@ -119,7 +119,7 @@ app.post('/signingup', async (req, res) => {
         const schema = Joi.object(
             {
                 name: Joi.string().max(20).required(),
-                email: Joi.string().alphanum().max(20).required(),
+                email: Joi.string().email().required(),
                 password: Joi.string().max(20).required()
             });
         
@@ -164,7 +164,7 @@ app.post('/loggingin', async (req,res) => {
     var email = req.body.email;
     var password = req.body.password;
 
-	const schema = Joi.string().max(20).required();
+	const schema = Joi.string().email().required();
 	const validationResult = schema.validate(email);
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
@@ -172,7 +172,7 @@ app.post('/loggingin', async (req,res) => {
 	   return;
 	}
 
-	const result = await userCollection.find({email: email}).project({email: 1, password: 1, _id: 1}).toArray();
+	const result = await userCollection.find({email: email}).project({email: 1, password: 1, _id: 1, name: 1}).toArray();
 
     badLoginHtml = `
     <p>Invalid email/password combination</p> <br>
@@ -190,6 +190,7 @@ app.post('/loggingin', async (req,res) => {
 		console.log("correct password");
 		req.session.authenticated = true;
 		req.session.email = email;
+        req.session.name = result[0].name;
 		req.session.cookie.maxAge = expireTime;
 
 		res.redirect('/members');
